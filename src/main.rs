@@ -64,8 +64,8 @@ fn main() {
 
 
     let fri_config = FriConfig {
-        log_blowup: 1,
-        num_queries: 100,
+        log_blowup: 3,
+        num_queries: 80,
         proof_of_work_bits: 16,
         mmcs: challenge_mmcs,
     };
@@ -77,8 +77,10 @@ fn main() {
 
 
     let private_input = PrivateInput::new(Goldilocks::from_canonical_u64(1875143437), Goldilocks::from_canonical_u64(561461413));
-    let bidders = vec![PublicBid {bidder: "0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5".to_string(), encrypted_amount: "9c9f630ef72b691d0000000000000000".to_string()},
-    PublicBid {bidder: "0x32948234823944cd42a57a5a7a".to_string(), encrypted_amount: "9f78d0218507ec4d40932b5700000000".to_string()}];
+    let bidders = vec![
+        PublicBid {bidder: "0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5".to_string(), encrypted_amount: "f18f68c8010000000000000000000000".to_string()},
+        PublicBid {bidder: "0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5".to_string(), encrypted_amount: "61864622010000000000000000000000".to_string()},
+    ];
 
     let trace = generate_execution_trace(&bidders, &private_input, 561461413, 1875143437);
 
@@ -86,8 +88,8 @@ fn main() {
     let mut challenger = Challenger::from_hasher(vec![], byte_hash);
 
     let air = ProverAir {public_input: bidders};
-    let proof = prove(&config, &air , &mut challenger, trace, &vec![]);
+    let proof = prove(&config, &air , &mut challenger, trace, &vec![Goldilocks::from_canonical_u64(1875143437)]);
     let mut challenger = Challenger::from_hasher(vec![], byte_hash);
-    verify(&config, &air, &mut challenger, &proof, &vec![]).expect("verification failed");
+    verify(&config, &air, &mut challenger, &proof, &vec![Goldilocks::from_canonical_u64(1875143437)]).expect("verification failed");
 
 }

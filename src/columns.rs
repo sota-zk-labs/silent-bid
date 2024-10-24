@@ -1,9 +1,13 @@
+use core::borrow::{BorrowMut, Borrow};
+
 pub const READ_BYTES: usize = 4;
 pub const DECODED_BYTES: usize = 4;
-pub const NUM_PROVER_COLS: usize = 19;
+pub const NUM_BID_COLS: usize = 20;
 #[derive(Default, Clone, Debug)]
+#[repr(C)]
 pub struct BidCols<T> {
     /// 8 bytes read
+    pub new_bidder: T,
     pub is_reading: T,
     pub is_exponent: T,
     pub read_bytes: [T; READ_BYTES],
@@ -16,17 +20,19 @@ pub struct BidCols<T> {
     pub q_r: T,
     pub decoded_bytes: [T; DECODED_BYTES],
     pub is_error: T,
-    pub lim: T,
+    pub gap: T,
     pub final_value: T,
 }
 
 impl<T> BidCols<T> {
+
     pub fn to_vec(&self) -> Vec<T>
     where
         T: Clone,
     {
         let mut res: Vec<T> = vec![];
         let d = self.clone();
+        res.push(d.new_bidder);
         res.push(d.is_reading);
         res.push(d.is_exponent);
         res.extend(d.read_bytes.to_vec());
@@ -39,13 +45,14 @@ impl<T> BidCols<T> {
         res.push(d.q_r);
         res.extend(d.decoded_bytes.to_vec());
         res.push(d.is_error);
-        res.push(d.lim);
+        res.push(d.gap);
         res.push(d.final_value);
         res
     }
 
     pub fn change(
         &mut self,
+        new_bidder: T,
         is_reading: T,
         is_exponent: T,
         read_bytes: [T;READ_BYTES],
@@ -58,9 +65,10 @@ impl<T> BidCols<T> {
         q_r: T,
         decoded_bytes: [T;DECODED_BYTES],
         is_error: T,
-        lim: T,
+        gap: T,
         final_value: T
     ) {
+        self.new_bidder = new_bidder;
         self.is_reading = is_reading;
         self.is_exponent = is_exponent;
         self.read_bytes = read_bytes;
@@ -73,8 +81,29 @@ impl<T> BidCols<T> {
         self.q_r = q_r;
         self.decoded_bytes = decoded_bytes;
         self.is_error = is_error;
-        self.lim = lim;
+        self.gap = gap;
         self.final_value = final_value;
     }
 }
 
+impl<T> Borrow<BidCols<T>> for [T] {
+    fn borrow(&self) -> &BidCols<T> {
+        debug_assert_eq!(self.len(), NUM_BID_COLS);
+        let (prefix, shorts, suffix) = unsafe { self.align_to::<BidCols<T>>() };
+        debug_assert!(prefix.is_empty(), "Alignment should match");
+        debug_assert!(suffix.is_empty(), "Alignment should match");
+        debug_assert_eq!(shorts.len(), 1);
+        &shorts[0]
+    }
+}
+
+impl<T> BorrowMut<BidCols<T>> for [T] {
+    fn borrow_mut(&mut self) -> &mut BidCols<T> {
+        debug_assert_eq!(self.len(), NUM_BID_COLS);
+        let (prefix, shorts, suffix) = unsafe { self.align_to_mut::<BidCols<T>>() };
+        debug_assert!(prefix.is_empty(), "Alignment should match");
+        debug_assert!(suffix.is_empty(), "Alignment should match");
+        debug_assert_eq!(shorts.len(), 1);
+        &mut shorts[0]
+    }
+}
