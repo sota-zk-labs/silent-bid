@@ -1,5 +1,5 @@
-pub struct Bid {
+pub struct PublicBid {
     pub bidder: String,
-    pub amount: u64,
+    pub encrypted_amount: String,
 }
 

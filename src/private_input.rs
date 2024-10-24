@@ -1,12 +1,16 @@
+use p3_field::Field;
+
 #[derive(Clone)]
-pub struct PrivateInput {
-    private_key: String,
+pub struct PrivateInput<F> {
+    pub private_modulus: F,
+    pub private_exponent: F,
 }
 
-impl PrivateInput {
-    pub fn new(private_key: String) -> Self {
+impl <F> PrivateInput<F> {
+    pub fn new(private_modulus: F, private_exponent: F) -> Self {
         Self {
-            private_key
+            private_modulus,
+            private_exponent
         }
     }
 }

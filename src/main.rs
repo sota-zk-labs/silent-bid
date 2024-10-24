@@ -2,18 +2,23 @@ mod air;
 mod public_input;
 mod private_input;
 mod generate_execution_trace;
+mod utils;
+mod columns;
 
+use std::io::Read;
 use std::marker::PhantomData;
-use p3_challenger::{ HashChallenger, SerializingChallenger32};
+use p3_challenger::{HashChallenger, SerializingChallenger32, SerializingChallenger64};
 use p3_circle::CirclePcs;
 use p3_commit::ExtensionMmcs;
+use p3_dft::Radix2DitParallel;
 use p3_field::AbstractField;
 use p3_field::extension::BinomialExtensionField;
-use p3_fri::{FriConfig};
+use p3_fri::{FriConfig, TwoAdicFriPcs};
 use p3_keccak::Keccak256Hash;
+use p3_keccak_air::KeccakAir;
 use p3_merkle_tree::MerkleTreeMmcs;
-use p3_mersenne_31::{Mersenne31};
-use p3_symmetric::{CompressionFunctionFromHasher,  SerializingHasher32};
+use p3_goldilocks::Goldilocks;
+use p3_symmetric::{CompressionFunctionFromHasher, SerializingHasher32, SerializingHasher64};
 use p3_uni_stark::{prove, verify, StarkConfig};
 use tracing_forest::util::LevelFilter;
 use tracing_forest::ForestLayer;
@@ -23,18 +28,9 @@ use tracing_subscriber::{EnvFilter, Registry};
 use crate::air::ProverAir;
 use crate::generate_execution_trace::generate_execution_trace;
 use crate::private_input::PrivateInput;
-
-const NUM_PROVER_COLS: usize = 42;
-const RESULT_ADDRESS_START: usize = 1;
-const RESULT_ADDRESS_END: usize = 20;
-const RESULT_AMOUNT: usize = 0;
-const INPUT_AMOUNT: usize = 21;
-const INPUT_ADDRESS_START: usize = 22;
-const INPUT_ADDRESS_END: usize = 41;
+use crate::public_input::PublicBid;
 
 fn main() {
-
-    // set log level
     let env_filter = EnvFilter::builder()
         .with_default_directive(LevelFilter::INFO.into())
         .from_env_lossy();
@@ -44,26 +40,28 @@ fn main() {
         .with(ForestLayer::default())
         .init();
 
-    // config type
-    type Val = Mersenne31;
-    type Challenge = BinomialExtensionField<Val, 3>;
+    type Val = Goldilocks;
+    type Challenge = BinomialExtensionField<Val, 2>;
 
     type ByteHash = Keccak256Hash;
-    type FieldHash = SerializingHasher32<ByteHash>;
+    type FieldHash = SerializingHasher64<ByteHash>;
     let byte_hash = ByteHash {};
-    let field_hash = FieldHash::new(Keccak256Hash {});
+    let field_hash = FieldHash::new(byte_hash);
 
     type MyCompress = CompressionFunctionFromHasher<ByteHash, 2, 32>;
     let compress = MyCompress::new(byte_hash);
 
     type ValMmcs = MerkleTreeMmcs<Val, u8, FieldHash, MyCompress, 32>;
-
     let val_mmcs = ValMmcs::new(field_hash, compress);
 
     type ChallengeMmcs = ExtensionMmcs<Val, Challenge, ValMmcs>;
     let challenge_mmcs = ChallengeMmcs::new(val_mmcs.clone());
 
-    type Challenger = SerializingChallenger32<Val, HashChallenger<u8, ByteHash, 32>>;
+    type Dft = Radix2DitParallel<Val>;
+    let dft = Dft::default();
+
+    type Challenger = SerializingChallenger64<Val, HashChallenger<u8, ByteHash, 32>>;
+
 
     let fri_config = FriConfig {
         log_blowup: 1,
@@ -71,32 +69,25 @@ fn main() {
         proof_of_work_bits: 16,
         mmcs: challenge_mmcs,
     };
-
-    type Pcs = CirclePcs<Val, ValMmcs, ChallengeMmcs>;
-    let pcs = Pcs {
-        mmcs: val_mmcs,
-        fri_config,
-        _phantom: PhantomData,
-    };
+    type Pcs = TwoAdicFriPcs<Val, Dft, ValMmcs, ChallengeMmcs>;
+    let pcs = Pcs::new(dft, val_mmcs, fri_config);
 
     type MyConfig = StarkConfig<Pcs, Challenge, Challenger>;
     let config = MyConfig::new(pcs);
-    let private_input = PrivateInput::new("vjp".to_string());
-    let trace = generate_execution_trace::<Val>(&vec![], private_input.clone());
+
+
+    let private_input = PrivateInput::new(Goldilocks::from_canonical_u64(1875143437), Goldilocks::from_canonical_u64(561461413));
+    let bidders = vec![PublicBid {bidder: "0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5".to_string(), encrypted_amount: "9c9f630ef72b691d0000000000000000".to_string()},
+    PublicBid {bidder: "0x32948234823944cd42a57a5a7a".to_string(), encrypted_amount: "9f78d0218507ec4d40932b5700000000".to_string()}];
+
+    let trace = generate_execution_trace(&bidders, &private_input, 561461413, 1875143437);
+
 
     let mut challenger = Challenger::from_hasher(vec![], byte_hash);
 
-
-
-    let pis = vec![
-        Mersenne31::from_canonical_u64(0),
-        Mersenne31::from_canonical_u64(1),
-        Mersenne31::from_canonical_u64(21),
-    ];
-
-    let air = ProverAir::new(private_input.clone(), vec![]);
-    let proof = prove(&config, &air , &mut challenger, trace, &pis);
+    let air = ProverAir {public_input: bidders};
+    let proof = prove(&config, &air , &mut challenger, trace, &vec![]);
     let mut challenger = Challenger::from_hasher(vec![], byte_hash);
-    verify(&config, &air, &mut challenger, &proof, &pis).expect("verification failed");
+    verify(&config, &air, &mut challenger, &proof, &vec![]).expect("verification failed");
 
 }
