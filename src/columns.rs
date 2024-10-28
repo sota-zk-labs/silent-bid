@@ -2,16 +2,18 @@ use core::borrow::{BorrowMut, Borrow};
 
 pub const READ_BYTES: usize = 4;
 pub const DECODED_BYTES: usize = 4;
-pub const NUM_BID_COLS: usize = 20;
+pub const ADDRESS_BYTES: usize = 20;
+pub const NUM_BID_COLS: usize = 43;
+
+pub const BASE: usize = 311;
 #[derive(Default, Clone, Debug)]
 #[repr(C)]
 pub struct BidCols<T> {
-    /// 8 bytes read
+    pub is_dummy: T,
     pub new_bidder: T,
     pub is_reading: T,
     pub is_exponent: T,
     pub read_bytes: [T; READ_BYTES],
-    // pub read_value: T,
     pub current_value: T,
     pub quotient_value: T,
     pub exponent_value: T,
@@ -22,6 +24,9 @@ pub struct BidCols<T> {
     pub is_error: T,
     pub gap: T,
     pub final_value: T,
+    pub read_address: [T; ADDRESS_BYTES],
+    pub hash_lim: T,
+    pub hash_value: T,
 }
 
 impl<T> BidCols<T> {
@@ -32,6 +37,7 @@ impl<T> BidCols<T> {
     {
         let mut res: Vec<T> = vec![];
         let d = self.clone();
+        res.push(d.is_dummy);
         res.push(d.new_bidder);
         res.push(d.is_reading);
         res.push(d.is_exponent);
@@ -47,16 +53,19 @@ impl<T> BidCols<T> {
         res.push(d.is_error);
         res.push(d.gap);
         res.push(d.final_value);
+        res.extend(d.read_address.to_vec());
+        res.push(d.hash_lim);
+        res.push(d.hash_value);
         res
     }
 
     pub fn change(
         &mut self,
+        is_dummy: T,
         new_bidder: T,
         is_reading: T,
         is_exponent: T,
         read_bytes: [T;READ_BYTES],
-        // read_value: T,
         current_value: T,
         quotient_value: T,
         exponent_value: T,
@@ -66,8 +75,12 @@ impl<T> BidCols<T> {
         decoded_bytes: [T;DECODED_BYTES],
         is_error: T,
         gap: T,
-        final_value: T
+        final_value: T,
+        read_address: [T; ADDRESS_BYTES],
+        hash_lim: T,
+        hash_value: T
     ) {
+        self.is_dummy = is_dummy;
         self.new_bidder = new_bidder;
         self.is_reading = is_reading;
         self.is_exponent = is_exponent;
@@ -83,6 +96,9 @@ impl<T> BidCols<T> {
         self.is_error = is_error;
         self.gap = gap;
         self.final_value = final_value;
+        self.read_address = read_address;
+        self.hash_lim = hash_lim;
+        self.hash_value = hash_value;
     }
 }
 

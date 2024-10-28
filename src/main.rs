@@ -15,10 +15,9 @@ use p3_field::AbstractField;
 use p3_field::extension::BinomialExtensionField;
 use p3_fri::{FriConfig, TwoAdicFriPcs};
 use p3_keccak::Keccak256Hash;
-use p3_keccak_air::KeccakAir;
 use p3_merkle_tree::MerkleTreeMmcs;
 use p3_goldilocks::Goldilocks;
-use p3_symmetric::{CompressionFunctionFromHasher, SerializingHasher32, SerializingHasher64};
+use p3_symmetric::{CompressionFunctionFromHasher, SerializingHasher64};
 use p3_uni_stark::{prove, verify, StarkConfig};
 use tracing_forest::util::LevelFilter;
 use tracing_forest::ForestLayer;
@@ -79,17 +78,21 @@ fn main() {
     let private_input = PrivateInput::new(Goldilocks::from_canonical_u64(1875143437), Goldilocks::from_canonical_u64(561461413));
     let bidders = vec![
         PublicBid {bidder: "0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5".to_string(), encrypted_amount: "f18f68c8010000000000000000000000".to_string()},
-        PublicBid {bidder: "0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5".to_string(), encrypted_amount: "61864622010000000000000000000000".to_string()},
+        PublicBid {bidder: "0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5".to_string(), encrypted_amount: "e399a865010000000000000000000000".to_string()},
     ];
 
     let trace = generate_execution_trace(&bidders, &private_input, 561461413, 1875143437);
 
+    let public_input = vec![
+        Goldilocks::from_canonical_u64(1875143437), //modulo
+        Goldilocks::from_canonical_u64(8290822299212767758) // hash value
+    ];
 
     let mut challenger = Challenger::from_hasher(vec![], byte_hash);
 
     let air = ProverAir {public_input: bidders};
-    let proof = prove(&config, &air , &mut challenger, trace, &vec![Goldilocks::from_canonical_u64(1875143437)]);
+    let proof = prove(&config, &air , &mut challenger, trace, &public_input);
     let mut challenger = Challenger::from_hasher(vec![], byte_hash);
-    verify(&config, &air, &mut challenger, &proof, &vec![Goldilocks::from_canonical_u64(1875143437)]).expect("verification failed");
+    verify(&config, &air, &mut challenger, &proof, &public_input).expect("verification failed");
 
 }

@@ -24,3 +24,4 @@ p3-keccak-air = { git = "https://github.com/Plonky3/Plonky3.git" }
 tracing-subscriber = { version = "0.3.17", features = ["std", "env-filter"] }
 tracing-forest = { version = "0.1.6", features = ["ansi", "smallvec"] }
 bytemuck = "1.19.0"
+hex = "0.4.3"

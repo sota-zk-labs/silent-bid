@@ -15,6 +15,23 @@ pub fn hex_to_bytes(hex: &str) -> Result<Vec<u8>, String> {
         .collect()
 }
 
+pub fn address_to_bytes(address: &String) -> Vec<u8> {
+    let address = address.trim_start_matches("0x");
+
+    // Decode hex string to a vector of bytes
+    let address_bytes = hex::decode(address).unwrap();
+    address_bytes
+}
+
+pub fn bytes_to_address(address_bytes: &[u8]) -> String {
+    // Convert bytes to a hex string
+    let address_hex = hex::encode(address_bytes);
+
+    // Add "0x" prefix to make it look like a typical Ethereum address
+    let ethereum_address = format!("0x{}", address_hex);
+    ethereum_address
+}
+
 /// Calculates Modular Exponent for given `base`, `exponent` and `modulus`.
 #[must_use]
 pub fn mod_pow(base: u64, exponent: u64, modulus: u64) -> u64 {
