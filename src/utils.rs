@@ -1,3 +1,5 @@
+use crate::columns::AMOUNT_BITS;
+
 pub fn bytes_to_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{:02x}", b)).collect::<String>()
 }
@@ -49,4 +51,27 @@ pub fn mod_pow(base: u64, exponent: u64, modulus: u64) -> u64 {
     }
     result = result % modulus as u128;
     result as u64
+}
+
+pub fn u64_to_bits(num: u64) -> Vec<u8> {
+    (0..64).map(|i| ((num >> (63 - i)) & 1) as u8).collect()
+}
+pub fn find_diff_pos(a: u64, b: u64) -> u64 {
+    let bit_a = u64_to_bits(a);
+    let bit_b = u64_to_bits(b);
+    let mut res = 64;
+    for i in 0..AMOUNT_BITS {
+        if bit_a[i] != bit_b[i] {
+            res = i;
+            break;
+        }
+    }
+    res as u64
+}
+
+
+#[test]
+fn test_u64_to_bits() {
+    let d = 3;
+    println!("{:?}", u64_to_bits(d));
 }

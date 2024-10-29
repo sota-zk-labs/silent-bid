@@ -1,3 +1,5 @@
+#![feature(step_trait)]
+
 mod air;
 mod public_input;
 mod private_input;
@@ -6,9 +8,7 @@ mod utils;
 mod columns;
 
 use std::io::Read;
-use std::marker::PhantomData;
 use p3_challenger::{HashChallenger, SerializingChallenger32, SerializingChallenger64};
-use p3_circle::CirclePcs;
 use p3_commit::ExtensionMmcs;
 use p3_dft::Radix2DitParallel;
 use p3_field::AbstractField;
@@ -77,15 +77,16 @@ fn main() {
 
     let private_input = PrivateInput::new(Goldilocks::from_canonical_u64(1875143437), Goldilocks::from_canonical_u64(561461413));
     let bidders = vec![
-        PublicBid {bidder: "0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5".to_string(), encrypted_amount: "f18f68c8010000000000000000000000".to_string()},
-        PublicBid {bidder: "0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5".to_string(), encrypted_amount: "e399a865010000000000000000000000".to_string()},
+        PublicBid {bidder: "0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5".to_string(), encrypted_amount: "211be84e0b6176170000000000000000".to_string()},
+        PublicBid {bidder: "0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfdd".to_string(), encrypted_amount: "d1188229623701140000000000000000".to_string()},
+        PublicBid {bidder: "0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfdd".to_string(), encrypted_amount: "8f8eb7400b6176170000000000000000".to_string()},
     ];
 
     let trace = generate_execution_trace(&bidders, &private_input, 561461413, 1875143437);
 
     let public_input = vec![
         Goldilocks::from_canonical_u64(1875143437), //modulo
-        Goldilocks::from_canonical_u64(8290822299212767758) // hash value
+        Goldilocks::from_canonical_u64(612994769488612804) // hash value
     ];
 
     let mut challenger = Challenger::from_hasher(vec![], byte_hash);
