@@ -9,14 +9,6 @@ pub struct  ProverAir{
     pub(crate) public_input: Vec<PublicBid>,
 }
 
-impl ProverAir {
-    pub fn new(public_input: Vec<PublicBid>) -> Self{
-        Self {
-            public_input
-        }
-    }
-}
-
 impl <F: Field> BaseAir<F> for ProverAir {
     fn width(&self) -> usize {
         NUM_BID_COLS
@@ -181,7 +173,7 @@ pub fn eval_hashing<AB: AirBuilderWithPublicValues> (builder: &mut AB) {
     for i in 0..5 {
         let hash_num = next.read_address[i*4] +  next.read_address[i*4 + 1] * AB::Expr::from_canonical_u64(256)
             + local.read_address[i*4 + 2] * AB::Expr::from_canonical_u64(65536) + next.read_address[i*4 + 3] * AB::Expr::from_canonical_u64(16777216);
-        first_hash = first_hash +  hash_num * first_lim.clone();
+        first_hash += hash_num * first_lim.clone();
         first_lim = base.clone() * first_lim;
     }
     builder.when_first_row().assert_eq(local.hash_value, first_hash);
@@ -199,7 +191,7 @@ pub fn eval_hashing<AB: AirBuilderWithPublicValues> (builder: &mut AB) {
     for i in 0..5 {
         let hash_num = next.read_address[i*4] +  next.read_address[i*4 + 1] * AB::Expr::from_canonical_u64(256)
             + local.read_address[i*4 + 2] * AB::Expr::from_canonical_u64(65536) + next.read_address[i*4 + 3] * AB::Expr::from_canonical_u64(16777216);
-        new_hash = new_hash +  hash_num * start_lim.clone();
+        new_hash += hash_num * start_lim.clone();
         start_lim = base.clone() * start_lim;
     }
     builder.when(local_not_dummy.clone()).when(next_new_bidder).assert_eq(new_hash, next.hash_value);
@@ -247,7 +239,7 @@ pub fn eval_logic<AB: AirBuilderWithPublicValues> (builder: &mut AB) {
 
     let next_computing_winner = next.computing_winner;
     // check nonce
-    builder.when(next_computing_winner.clone()).assert_eq(next.final_value, next.bid_amount * AB::Expr::from_canonical_u64(1000) + next.nonce);
+    builder.when(next_computing_winner).assert_eq(next.final_value, next.bid_amount * AB::Expr::from_canonical_u64(1000) + next.nonce);
 
 
     // check winner
@@ -278,18 +270,26 @@ pub fn eval_logic<AB: AirBuilderWithPublicValues> (builder: &mut AB) {
     }
 
     // error
-    builder.when(next_computing_winner.clone()).when(next_is_error).assert_zero(next.change_winner);
+    builder.when(next_computing_winner).when(next_is_error).assert_zero(next.change_winner);
 
     // if change
     // new bid amount equals to the previous winner
-    builder.when(next_computing_winner.clone()).when(next_change).assert_eq(next.bid_amount, next.winner_amount);
+    builder.when(next_computing_winner).when(next_change).assert_eq(next.bid_amount, next.winner_amount);
     for i in 0..ADDRESS_BYTES {
-        builder.when(next_computing_winner.clone()).when(next_change).assert_eq(next.winner_address[i], next.read_address[i]);
+        builder.when(next_computing_winner).when(next_change).assert_eq(next.winner_address[i], next.read_address[i]);
     }
 
     // if not change
-    builder.when(next_computing_winner.clone()).when(next_not_change.clone()).assert_eq(local.winner_amount, next.winner_amount);
+    builder.when(next_computing_winner).when(next_not_change.clone()).assert_eq(local.winner_amount, next.winner_amount);
     for i in 0..ADDRESS_BYTES {
-        builder.when(next_computing_winner.clone()).when(next_not_change.clone()).assert_eq(next.winner_address[i], local.winner_address[i]);
+        builder.when(next_computing_winner).when(next_not_change.clone()).assert_eq(next.winner_address[i], local.winner_address[i]);
+    }
+
+    // check answer with public input
+    let winner_amount = builder.public_values()[3];
+    builder.when_last_row().assert_eq(local.winner_amount, winner_amount);
+    for i in 0..ADDRESS_BYTES {
+        let add = builder.public_values()[i + 4];
+        builder.when_last_row().assert_eq(local.winner_address[i], add);
     }
 }

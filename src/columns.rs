@@ -4,7 +4,6 @@ pub const READ_BYTES: usize = 4;
 pub const DECODED_BYTES: usize = 4;
 pub const ADDRESS_BYTES: usize = 20;
 pub const NUM_BID_COLS: usize = 68;
-pub const AMOUNT_BITS: usize = 64;
 pub const BASE: usize = 311;
 #[derive(Clone, Debug)]
 #[repr(C)]
@@ -89,7 +88,6 @@ impl<T> BidCols<T> {
         res.push(d.is_exponent);
         res.push(d.computing_winner);
         res.extend(d.read_bytes.to_vec());
-        // res.push(d.read_value);
         res.push(d.current_value);
         res.push(d.quotient_value);
         res.push(d.exponent_value);
@@ -105,15 +103,13 @@ impl<T> BidCols<T> {
         res.push(d.hash_value);
         res.push(d.bid_amount);
         res.push(d.nonce);
-        // res.extend(d.bid_amount_bits.to_vec());
         res.push(d.winner_amount);
-        // res.extend(d.winner_amount_bits);
-        // res.push(d.pos);
         res.push(d.change_winner);
         res.extend(d.winner_address.to_vec());
         res
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn change(
         &mut self,
         is_dummy: T,
@@ -137,10 +133,7 @@ impl<T> BidCols<T> {
         hash_value: T,
         bid_amount: T,
         nonce: T,
-        // bid_amount_bits: [T; AMOUNT_BITS],
         winner_amount: T,
-        // winner_amount_bits: [T; AMOUNT_BITS],
-        // pos: T,
         change_winner: T,
         winner_address: [T; ADDRESS_BYTES],
     ) {
@@ -166,10 +159,7 @@ impl<T> BidCols<T> {
         self.hash_value = hash_value;
         self.bid_amount = bid_amount;
         self.nonce = nonce;
-        // self.bid_amount_bits = bid_amount_bits;
         self.winner_amount = winner_amount;
-        // self.winner_amount_bits = winner_amount_bits;
-        // self.pos = pos;
         self.change_winner = change_winner;
         self.winner_address = winner_address;
     }

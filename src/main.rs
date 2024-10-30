@@ -7,8 +7,7 @@ mod generate_execution_trace;
 mod utils;
 mod columns;
 
-use std::io::Read;
-use p3_challenger::{HashChallenger, SerializingChallenger32, SerializingChallenger64};
+use p3_challenger::{HashChallenger, SerializingChallenger64};
 use p3_commit::ExtensionMmcs;
 use p3_dft::Radix2DitParallel;
 use p3_field::AbstractField;
@@ -28,6 +27,7 @@ use crate::air::ProverAir;
 use crate::generate_execution_trace::generate_execution_trace;
 use crate::private_input::PrivateInput;
 use crate::public_input::PublicBid;
+use crate::utils::address_to_bytes;
 
 fn main() {
     let env_filter = EnvFilter::builder()
@@ -82,12 +82,19 @@ fn main() {
         PublicBid {bidder: "0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfdd".to_string(), encrypted_amount: "8f8eb7400b6176170000000000000000".to_string()},
     ];
 
-    let trace = generate_execution_trace(&bidders, &private_input, 561461413, 1875143437);
+    let (trace, winner_add, winner_amount, hash_value) = generate_execution_trace(&bidders, &private_input, 561461413, 1875143437);
+    println!("hash input: {:?}", hash_value);
+    println!("winner: {:?}, amount: {:?}", winner_add, winner_amount);
+    let address_bytes = address_to_bytes(&winner_add);
+    let address_bytes_goldilocks: [Goldilocks; 20] = address_bytes.iter().map(|e| Goldilocks::from_canonical_u8(*e)).collect::<Vec<Goldilocks>>().try_into().expect("slice with incorrect length");
 
-    let public_input = vec![
+    let mut public_input = vec![
         Goldilocks::from_canonical_u64(1875143437), //modulo
-        Goldilocks::from_canonical_u64(612994769488612804) // hash value
+        hash_value, // hash value
+        Goldilocks::from_canonical_u64(311), // base in Rolling Hash
+        winner_amount,
     ];
+    public_input.extend(address_bytes_goldilocks);
 
     let mut challenger = Challenger::from_hasher(vec![], byte_hash);
 
