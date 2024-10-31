@@ -1,5 +1,3 @@
-use p3_field::Field;
-
 #[derive(Clone)]
 pub struct PrivateInput<F> {
     pub private_modulus: F,
