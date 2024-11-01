@@ -58,3 +58,8 @@ generation. The auction process follows four main phases:
 #### Prover & Verifier Flow:
 
 ![prover_verifier_flow](diagram/prover_verifier_flow.png)
+
+### Implementation
+
+Read this document: [proving service](./document/proving_service.md).
+
