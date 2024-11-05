@@ -2,8 +2,6 @@
 
 [![License](https://img.shields.io/github/license/sota-zk-labs/orn)](./LICENSE)
 
-[//]: # ([![Continuous Integration]&#40;https://github.com/sota-zk/orn/actions/workflows/ci.yaml/badge.svg&#41;]&#40;https://github.com/sota-zk/orn/actions/workflows/ci.yaml/badge.svg&#41;)
-
 ## Introduction
 
 **Silent Bid** is a [**Sealed-Bid Auction**](https://www.investopedia.com/terms/s/sealed-bid-auction.asp) platform built
@@ -43,23 +41,33 @@ generation. The auction process follows four main phases:
 1. **Initial Setup**: The auction owner creates the auction, sets the required deposit amount, transfers assets to the
    smart contract,
    and defines the auction's start and end times.
-2. **Bid Phase**: Bidders submit their bids to the smart contract by depositing the required amount.
-3. **Open Phase**: After the bidding window closes, the auction owner calculates the winner and generates a
+2. **Bidding Phase**: Bidders submit their bids to the smart contract by depositing the required amount.
+3. **Opening Phase**: After the bidding window closes, the auction owner calculates the winner and generates a
    zero-knowledge proof.
-4. **Verify Phase**: The owner submits the winner and the proof to the smart contract for verification, concluding the
+4. **Verification Phase**: The owner submits the winner and the proof to the smart contract for verification, concluding the
    auction.
 
 **Sequence diagrams for each module are shown below:**
 
 #### Auction Flow:
 
-![auction_flow](diagram/auction_flow.png)
+1. **Initial Setup**:
 
-#### Prover & Verifier Flow:
+![initial setup](diagram/initial_setup.png)
 
-![prover_verifier_flow](diagram/prover_verifier_flow.png)
+2. **Bidding Phase**:
+
+![bidding phase](diagram/bidding.png)
+
+3. **Opening Phase**:
+
+![opening phase](diagram/opening.png)
+
+4. **Verification Phase**:
+
+![verification phase](diagram/verification.png)
 
 ### Implementation
 
-Read this document: [proving service](./document/proving_service.md).
+Here is the documentation of how we implemented the [Proving Service](./document/proving_service.md).
 
